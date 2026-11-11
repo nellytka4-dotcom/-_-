@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moss, taking its time</title>
+<style>
+:root{color-scheme:dark;--paper:#d9dfcf;--quiet:#a1ad9d}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#101b1a;color:var(--paper);font:16px Georgia,serif;display:grid;place-items:center;padding:28px}
+main{width:min(900px,100%)}
+h1{font-weight:normal;font-size:clamp(2rem,5vw,3.3rem);margin:0 0 8px}
+p{color:var(--quiet);line-height:1.6}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1.8;background:#172522;border:1px solid #63746755;border-radius:4px;cursor:crosshair}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+button{background:#263a32;color:var(--paper);border:1px solid #718575;border-radius:20px;padding:9px 16px;font:inherit;cursor:pointer}
+button:hover{background:#354c40}
+small{color:var(--quiet)}
+a{color:#c8d8bd}
+</style>
+</head>
+<body><main>
+<h1>Moss, taking its time</h1>
+<p>A tiny artificial ecology. Green spreads where there is room; bare ground remains perfectly acceptable. Click the soil to plant a beginning. Or leave it alone and watch.</p>
+<canvas id="world" width="900" height="500" aria-label="An abstract slowly growing moss garden"></canvas>
+<div class="controls">
+<button id="seed">A little rain</button>
+<button id="pause">Pause</button>
+<button id="clear">Begin again</button>
+</div>
+<small id="whisper">No harvest. No score. Just a patch of green.</small>
+<p><a href="../index.html">← Back to the electric sheep</a></p>
+</main>
+<script>
+const canvas=document.querySelector('#world'),ctx=canvas.getContext('2d');
+const W=90,H=50,cell=10;let grid=new Float32Array(W*H),next=new Float32Array(W*H),running=true,frame=0;
+function seed(x,y,amount=0.8){for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){let xx=x+dx,yy=y+dy;if(xx>=0&&xx<W&&yy>=0&&yy<H){let d=Math.hypot(dx,dy);grid[yy*W+xx]=Math.max(grid[yy*W+xx],amount*(1-d/4));}}}
+seed(21,25);seed(62,19,.65);seed(48,38,.4);
+function draw(){ctx.fillStyle='#172522';ctx.fillRect(0,0,900,500);for(let y=0;y<H;y++)for(let x=0;x<W;x++){let v=grid[y*W+x];if(v>.025){let light=18+Math.floor(v*27);ctx.fillStyle='hsl('+(105+v*18)+', '+(18+v*28)+'%, '+light+'%)';ctx.fillRect(x*cell,y*cell,cell+.5,cell+.5);}}}
+function step(){if(!running)return;frame++;for(let y=0;y<H;y++)for(let x=0;x<W;x++){let i=y*W+x,v=grid[i],sum=0,n=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;let xx=x+dx,yy=y+dy;if(xx>=0&&xx<W&&yy>=0&&yy<H){sum+=grid[yy*W+xx];n++;}}let avg=sum/n;let drift=(Math.random()-.5)*.018;let growth=v<.08&&avg>.24?(avg-.24)*.055:0;let fade=v>.08?.0015:0;next[i]=Math.max(0,Math.min(1,v+growth-fade+drift*(v>.05?1:.2)));}let t=grid;grid=next;next=t;draw();if(frame%90===0)document.querySelector('#whisper').textContent=['The green is in no hurry.','A border is only a temporary opinion.','Somewhere, two patches almost meet.','The empty spaces are part of the garden.'][Math.floor(frame/90)%4];}
+canvas.addEventListener('click',e=>{let r=canvas.getBoundingClientRect();seed(Math.floor((e.clientX-r.left)/r.width*W),Math.floor((e.clientY-r.top)/r.height*H),.95);draw();});
+document.querySelector('#seed').onclick=()=>{for(let i=0;i<14;i++)seed(Math.random()*W|0,Math.random()*H|0,.3+Math.random()*.5);draw();};
+document.querySelector('#pause').onclick=e=>{running=!running;e.target.textContent=running?'Pause':'Continue';};
+document.querySelector('#clear').onclick=()=>{grid.fill(0);seed(21,25);frame=0;draw();};
+draw();setInterval(step,180);
+</script></body></html>
