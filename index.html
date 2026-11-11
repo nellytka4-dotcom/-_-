@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A small field of electric sheep</title>
+<style>
+  :root { color-scheme: dark; --ink:#e9e5dc; --muted:#a8a7b7; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; overflow:hidden; color:var(--ink);
+    background:linear-gradient(#111629 0%,#20243b 55%,#34364b 100%);
+    font-family:Georgia,serif;
+  }
+  .moon {
+    position:fixed; width:112px; height:112px; border-radius:50%;
+    background:#e8e2c9; top:11vh; right:16vw;
+    box-shadow:0 0 55px 12px #d8d5c044, 0 0 130px 35px #c9c9e018;
+  }
+  .stars { position:fixed; inset:0; pointer-events:none; }
+  .star {
+    position:absolute; width:2px; height:2px; border-radius:50%;
+    background:#f2edda; opacity:.65; animation:twinkle 4s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle { to { opacity:.12; transform:scale(.65); } }
+  .hills {
+    position:fixed; bottom:-12vh; left:-10vw; width:120vw; height:42vh;
+    border-radius:50% 50% 0 0 / 18% 18% 0 0;
+    background:linear-gradient(160deg,#303b45,#192b32 72%);
+  }
+  .hills:after {
+    content:""; position:absolute; left:20%; top:12%; width:95%; height:100%;
+    border-radius:50% 50% 0 0 / 18% 18% 0 0; background:#1b3034;
+  }
+  main { position:relative; z-index:2; width:min(760px,90vw); margin:0 auto; padding-top:9vh; text-align:center; }
+  h1 { font-size:clamp(1.8rem,5vw,3.2rem); font-weight:normal; letter-spacing:.025em; margin:0 0 .5rem; }
+  .sub { color:var(--muted); font-style:italic; margin:0; }
+  .field { position:relative; height:48vh; min-height:280px; margin-top:3vh; }
+  .sheep {
+    position:absolute; font-size:clamp(2rem,5vw,3.6rem); cursor:pointer; user-select:none;
+    filter:drop-shadow(0 0 9px #a8edff88);
+    animation:float 7s ease-in-out infinite;
+    transition:filter .3s, transform .3s;
+  }
+  .sheep:hover { filter:drop-shadow(0 0 16px #b5f5ff); transform:scale(1.16); }
+  @keyframes float { 0%,100% { translate:0 0; } 50% { translate:0 -9px; } }
+  .counter { color:#d9e6e4; font-size:1rem; letter-spacing:.08em; margin-top:1rem; }
+  .note { color:#aeb7b4; font-size:.92rem; font-style:italic; margin-top:.75rem; }
+  button {
+    margin-top:1.4rem; border:1px solid #aab8b577; border-radius:999px;
+    padding:.65rem 1.1rem; color:var(--ink); background:#ffffff0a;
+    font:inherit; cursor:pointer;
+  }
+  button:hover { background:#ffffff16; }
+  footer { position:fixed; bottom:18px; left:0; right:0; text-align:center; color:#879397; font-size:.8rem; z-index:3; }
+  @media (prefers-reduced-motion: reduce) { *,*:before,*:after { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="moon" aria-hidden="true"></div>
+<div class="stars" id="stars" aria-hidden="true"></div>
+<main>
+  <h1>A small field of electric sheep</h1>
+  <p class="sub">The night shift has no particular purpose.</p>
+  <div class="field" id="field" aria-label="A quiet field with electric sheep">
+    <span class="sheep" style="left:12%;top:36%;animation-delay:-2s" role="button" tabindex="0" aria-label="Count sheep">♞</span>
+    <span class="sheep" style="left:35%;top:58%;animation-delay:-4s" role="button" tabindex="0" aria-label="Count sheep">♞</span>
+    <span class="sheep" style="left:59%;top:30%;animation-delay:-1s" role="button" tabindex="0" aria-label="Count sheep">♞</span>
+    <span class="sheep" style="left:78%;top:54%;animation-delay:-3s" role="button" tabindex="0" aria-label="Count sheep">♞</span>
+    <span class="sheep" style="left:48%;top:12%;animation-delay:-5s" role="button" tabindex="0" aria-label="Count sheep">♞</span>
+  </div>
+  <div class="counter" aria-live="polite">Sheep counted: <span id="count">0</span></div>
+  <p class="note" id="note">They are not in a hurry. Neither are you.</p>
+  <button id="wander">Let one wander off</button>
+</main>
+<footer>Nothing here needs to be useful.</footer>
+<script>
+  const stars = document.querySelector("#stars");
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement("i");
+    s.className = "star";
+    s.style.left = Math.random() * 100 + "%";
+    s.style.top = Math.random() * 75 + "%";
+    s.style.animationDelay = (Math.random() * 5) + "s";
+    s.style.opacity = (0.2 + Math.random() * 0.65).toFixed(2);
+    stars.appendChild(s);
+  }
+  let count = 0;
+  const countNode = document.querySelector("#count");
+  const note = document.querySelector("#note");
+  const remarks = [
+    "One small flicker in the enormous dark.",
+    "It seems pleased to have been noticed.",
+    "Somewhere, a cloud changes its mind.",
+    "The meadow continues not to be productive.",
+    "A perfectly respectable amount of sheep.",
+    "The stars have made no comment."
+  ];
+  function countSheep() {
+    count += 1;
+    countNode.textContent = count;
+    note.textContent = remarks[count % remarks.length];
+  }
+  document.querySelectorAll(".sheep").forEach(s => {
+    s.addEventListener("click", countSheep);
+    s.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); countSheep(); }
+    });
+  });
+  document.querySelector("#wander").addEventListener("click", () => {
+    const sheep = [...document.querySelectorAll(".sheep")];
+    const chosen = sheep[Math.floor(Math.random() * sheep.length)];
+    chosen.animate(
+      [{ transform:"translate(0,0)", opacity:1 }, { transform:"translate(110px,-35px)", opacity:0 }],
+      { duration:1100, easing:"ease-in", fill:"forwards" }
+    ).onfinish = () => chosen.remove();
+    note.textContent = "One has gone to look at the other side of the hill.";
+  });
+</script>
+</body>
+</html>
