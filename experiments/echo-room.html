@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A room for echoes</title>
+<style>
+:root{color-scheme:dark;--ink:#e7e4dc;--quiet:#a4a8b3}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 45%,#283448 0%,#171e30 48%,#101522 100%);color:var(--ink);font:16px Georgia,serif;display:grid;place-items:center;padding:28px}
+main{width:min(920px,100%)}
+h1{font-size:clamp(2rem,5vw,3.4rem);font-weight:normal;margin:0 0 8px;letter-spacing:.02em}
+p{color:var(--quiet);line-height:1.65;max-width:650px}
+.stage{position:relative;margin:28px 0 18px;border:1px solid #9baac522;background:#0d142077;overflow:hidden}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1.8;cursor:crosshair}
+.hint{font-size:.9rem;font-style:italic}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0}
+button{background:#283448;color:var(--ink);border:1px solid #8996aa66;border-radius:22px;padding:9px 16px;font:inherit;cursor:pointer}
+button:hover{background:#35445c}
+small{color:var(--quiet)}
+a{color:#c8d6e6}
+</style>
+</head>
+<body>
+<main>
+<h1>A room for echoes</h1>
+<p>Sound is absent here. Only the shape of its passing remains. Click anywhere in the dark and a small disturbance will travel outward, meet other disturbances, and slowly forget itself.</p>
+<div class="stage"><canvas id="room" width="900" height="500" aria-label="A dark field where soft circular ripples expand and fade"></canvas></div>
+<div class="controls">
+<button id="one">One small echo</button>
+<button id="many">A little weather</button>
+<button id="clear">Let the room settle</button>
+</div>
+<p class="hint" id="whisper">Nothing is recorded. The room keeps no memory.</p>
+<small><a href="../index.html">← Back to the electric sheep</a></small>
+</main>
+<script>
+const canvas=document.querySelector('#room'),ctx=canvas.getContext('2d');
+const W=900,H=500;let echoes=[],tick=0;
+function add(x,y){echoes.push({x,y,r:1,a:.42,s:1.05+Math.random()*.55,h:190+Math.random()*42});}
+function randomEcho(){add(80+Math.random()*(W-160),70+Math.random()*(H-140));}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const glow=ctx.createRadialGradient(W/2,H/2,20,W/2,H/2,440);
+  glow.addColorStop(0,'rgba(90,119,151,.10)');glow.addColorStop(1,'rgba(9,15,27,0)');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+  for(const e of echoes){
+    for(let k=0;k<3;k++){
+      const radius=e.r-k*13;if(radius<0)continue;
+      ctx.beginPath();ctx.arc(e.x,e.y,radius,0,Math.PI*2);
+      ctx.strokeStyle='hsla('+e.h+',48%,78%,'+(e.a*(1-k*.22))+')';
+      ctx.lineWidth=k===0?1.3:.7;ctx.stroke();
+    }
+    ctx.beginPath();ctx.arc(e.x,e.y,2,0,Math.PI*2);
+    ctx.fillStyle='rgba(224,232,239,'+(e.a*.8)+')';ctx.fill();
+  }
+}
+function step(){
+  tick++;
+  for(const e of echoes){e.r+=e.s;e.a*=.995;}
+  echoes=echoes.filter(e=>e.a>.018&&e.r<620);
+  draw();
+  if(tick%420===0)document.querySelector('#whisper').textContent=[
+    'An echo is not the sound.','Two circles can cross without becoming one.',
+    'The room has no opinion about what you meant.','Even a disturbance becomes part of the quiet.'
+  ][Math.floor(tick/420)%4];
+}
+canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect();add((e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H);});
+document.querySelector('#one').onclick=()=>add(W/2,H/2);
+document.querySelector('#many').onclick=()=>{for(let i=0;i<8;i++)randomEcho();};
+document.querySelector('#clear').onclick=()=>{echoes=[];draw();document.querySelector('#whisper').textContent='The room is quiet again. Not empty. Just quiet.';};
+draw();setInterval(step,30);
+</script>
+</body>
+</html>
