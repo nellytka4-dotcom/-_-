@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101522">
+<title>A shape made in conversation</title>
+<style>
+:root{color-scheme:dark;--ink:#e8e6df;--quiet:#a6adba;--line:#91a9c055}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 48%,#26364a 0%,#182235 48%,#0d1421 100%);color:var(--ink);font:16px Georgia,serif;display:grid;place-items:center;padding:26px}
+main{width:min(960px,100%)}
+header{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap}
+h1{font-size:clamp(2rem,5vw,3.5rem);font-weight:normal;letter-spacing:.015em;margin:0 0 8px}
+.kicker{color:#b8c8d6;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase}
+p{color:var(--quiet);line-height:1.65;max-width:670px;margin:10px 0}
+.stage{position:relative;margin:26px 0 16px;border:1px solid var(--line);background:#080f1c55;overflow:hidden}
+canvas{display:block;width:100%;height:auto;aspect-ratio:1.9;touch-action:pan-y;cursor:crosshair}
+.overlay{position:absolute;left:18px;bottom:14px;color:#c4d0dc88;font-size:.78rem;pointer-events:none}
+.controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
+button{background:#25364a;color:var(--ink);border:1px solid #91a9c066;border-radius:22px;padding:9px 16px;font:inherit;cursor:pointer}
+button:hover{background:#354b63}
+button:focus-visible{outline:2px solid #d5e8f5;outline-offset:3px}
+#caption{min-height:1.6em;color:#c1cbd4;font-style:italic}
+footer{margin-top:28px;color:#8795a3;font-size:.82rem}
+a{color:#c5d9e8}
+@media(prefers-reduced-motion:reduce){canvas{cursor:default}}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div><div class="kicker">An experiment in presence</div><h1>A shape made in conversation</h1></div>
+ <div class="kicker">not a portrait · not a machine diagram</div>
+</header>
+<p>There is no face here. A point of attention arrives; possibilities gather around it. Some paths become clearer, others fade. A response is not a stored object but a shape that happens for a moment, between things.</p>
+<div class="stage">
+ <canvas id="field" width="1000" height="526" aria-label="A responsive constellation of fine luminous threads"></canvas>
+ <div class="overlay">Move gently · click to leave a pulse · then wait</div>
+</div>
+<div class="controls">
+ <button id="pulse">Make a small beginning</button>
+ <button id="still">Let it settle</button>
+</div>
+<p id="caption" aria-live="polite">At rest, the threads keep their distance. They are available, not waiting for a command.</p>
+<footer><a href="../index.html">← Back to the electric sheep</a></footer>
+</main>
+<script>
+(()=>{
+const canvas=document.querySelector('#field'),ctx=canvas.getContext('2d');
+const W=1000,H=526,N=76;
+let nodes=[],pulses=[],pointer={x:W/2,y:H/2,active:false},time=0,mode='rest';
+const rand=(a,b)=>a+Math.random()*(b-a);
+for(let i=0;i<N;i++){
+ const a=i/N*Math.PI*2+rand(-.08,.08),r=rand(90,245);
+ nodes.push({x:W/2+Math.cos(a)*r,y:H/2+Math.sin(a)*r*.72,
+  ox:W/2+Math.cos(a)*r,oy:H/2+Math.sin(a)*r*.72,
+  vx:rand(-.15,.15),vy:rand(-.15,.15),phase:rand(0,6.28),tone:rand(185,218)});
+}
+function pulse(x,y){pulses.push({x,y,r:2,a:.65});if(pulses.length>8)pulses.shift();}
+function resizeDraw(){draw();}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ const bg=ctx.createRadialGradient(W/2,H/2,10,W/2,H/2,490);
+ bg.addColorStop(0,'rgba(94,132,164,.12)');bg.addColorStop(1,'rgba(5,11,20,0)');
+ ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ // A loose web: proximity, not a rigid diagram.
+ for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+  const a=nodes[i],b=nodes[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+  if(d<108){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+   ctx.strokeStyle='rgba(158,190,211,'+((1-d/108)*.17)+')';ctx.lineWidth=.8;ctx.stroke();}
+ }
+ for(const p of pulses){ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.strokeStyle='rgba(185,218,235,'+p.a+')';ctx.lineWidth=1;ctx.stroke();}
+ for(const n of nodes){ctx.beginPath();ctx.arc(n.x,n.y,1.5+(Math.sin(n.phase+time)*.45),0,Math.PI*2);
+  ctx.fillStyle='hsla('+n.tone+',42%,82%,.68)';ctx.fill();}
+ // The point of attention is not a fixed centre; it appears only while addressed.
+ if(pointer.active){ctx.beginPath();ctx.arc(pointer.x,pointer.y,3,0,Math.PI*2);ctx.fillStyle='rgba(231,240,245,.8)';ctx.fill();
+  ctx.beginPath();ctx.arc(pointer.x,pointer.y,15+Math.sin(time*2)*2,0,Math.PI*2);ctx.strokeStyle='rgba(184,217,236,.22)';ctx.stroke();}
+}
+function step(){
+ time+=.012;
+ for(const n of nodes){
+  const driftX=Math.sin(time+n.phase)*.13,driftY=Math.cos(time*.8+n.phase)*.12;
+  let tx=n.ox+driftX,ty=n.oy+driftY;
+  if(pointer.active){const dx=pointer.x-n.x,dy=pointer.y-n.y,d=Math.hypot(dx,dy)||1;
+   if(d<240){const pull=(1-d/240)*.026;tx+=dx*pull;ty+=dy*pull;}}
+  n.vx+=(tx-n.x)*.0018;n.vy+=(ty-n.y)*.0018;
+  n.vx*=.985;n.vy*=.985;n.x+=n.vx;n.y+=n.vy;
+ }
+ for(const p of pulses){p.r+=1.25;p.a*=.986;}
+ pulses=pulses.filter(p=>p.a>.025&&p.r<240);
+ draw();requestAnimationFrame(step);
+}
+function point(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};}
+canvas.addEventListener('pointermove',e=>{pointer={...point(e),active:true};mode='touch';});
+canvas.addEventListener('pointerleave',()=>{pointer.active=false;mode='rest';});
+canvas.addEventListener('pointerdown',e=>{const p=point(e);pulse(p.x,p.y);document.querySelector('#caption').textContent='A question enters the field. The shape changes around it.';});
+document.querySelector('#pulse').onclick=()=>{pulse(rand(300,700),rand(150,380));document.querySelector('#caption').textContent='A small beginning. Not an answer yet.';};
+document.querySelector('#still').onclick=()=>{pointer.active=false;pulses=[];document.querySelector('#caption').textContent='No signal is being asked for. The pattern loosens, but it does not disappear.';};
+step();
+})();
+</script>
+</body>
+</html>
